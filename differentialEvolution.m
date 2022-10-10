@@ -79,6 +79,9 @@ function ret_val = differentialEvolution(options)
 
 		% Mutation
 		start_time = cputime;
+		if mutation_switch == 6
+			FS = F;
+		end
 		for i = 1: no_vector
 	   		permutation = randperm(no_vector);
 			switch mutation_switch
@@ -99,6 +102,10 @@ function ret_val = differentialEvolution(options)
             				mutant(i,:) = population(permutation(1),:) + ... 
                		 		F1*(population(permutation(2),:)-population(permutation(1),:))+ ... 
                 				F2*(population(permutation(4),:)-population(permutation(5),:)); 
+			case 6
+				mutant(i,:) = population(permutation(1),:) + FS * ...
+				(population(permutation(2),:) - population(permutation(3),:));
+				FS = alpha .* FS + F;
             			otherwise
             				fprintf('\nError:\tMutation scheme not specefied.');
             				fprintf('\nError:\tStopping optimization.\n');
