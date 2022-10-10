@@ -72,8 +72,8 @@ while ~feof(fp)
 	options.lower_limit = LB*ones(1, options.no_dimension);
 	% set to 1 to recycle previous population
 	options.use_previous_population = 0;
-	% select between 1 - 5
-	options.use_mutation_scheme = 1;
+	% select between 1 - 6
+	options.use_mutation_scheme = 6;
 	% set to 1 for sorted selection
 	options.use_sorted_selection = 0;
 	% set to 0 to stop printing answers, 1 to print to console, and 2 to dump into file
