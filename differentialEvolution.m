@@ -1,14 +1,14 @@
 function ret_val = differentialEvolution(options)
 	if nargin == 0
-		options.max_iteration = 1000;
+		options.max_iteration = 2000;
 		options.scale_factor_primary = 0.6;
 		options.scale_factor_secondary_1 = 0.5;
 		options.scale_factor_secondary_2 = 0.3;
 		options.crossover_rate = 0.8;
-		options.no_dimension = 10;
-		options.no_vector = 20;
-		options.upper_limit = ones(1, options.no_dimension);
-		options.lower_limit = -ones(1, options.no_dimension);
+		options.dimension_cnt = 10;
+		options.vector_cnt = 20;
+		options.upper_limit = ones(1, options.dimension_cnt);
+		options.lower_limit = -ones(1, options.dimension_cnt);
 		options.use_previous_population = 0;
 		options.use_mutation_scheme = 1;
 		options.use_sorted_selection = 0;
@@ -31,17 +31,17 @@ function ret_val = differentialEvolution(options)
 	F_1 = options.scale_factor_secondary_1;
 	F_2 = options.scale_factor_secondary_2;
 	Cr = options.crossover_rate;
-	no_dimension = options.no_dimension;
-	no_vector = options.no_vector;
-	u_limit = repmat(options.upper_limit, no_vector, 1);
-	l_limit = repmat(options.lower_limit, no_vector, 1);
+	dimension_cnt = options.dimension_cnt;
+	vector_cnt = options.vector_cnt;
+	UB = repmat(options.upper_limit, vector_cnt, 1);
+	LB = repmat(options.lower_limit, vector_cnt, 1);
 	prev_flag = options.use_previous_population;
 	mutation_switch = options.use_mutation_scheme;
 	sort_flag = options.use_sorted_selection;
 	print_flag = options.print_values;
 	eval_max = options.func_eval;
 	eval_exceed = 0;
-	fitness = zeros(no_vector, 1);
+	fitness = zeros(vector_cnt, 1);
 	fitness_trial = fitness;
 	fitness_func = options.fitness_func;
 	functionID = options.functionID;
@@ -52,92 +52,120 @@ function ret_val = differentialEvolution(options)
 		initCsv(resultPath);
 	end
 	init_time = cputime;
-
+	
 	% Initializing population
-	if prev_flag == 0 || isempty(population)
-		population = l_limit + (u_limit-l_limit).*rand(no_vector, no_dimension);
-	elseif prev_flag == 2
-		for i = 1: no_vector
-			fitness(i) = obj_func(fitness_func, population(i,:), functionID);
+	if isfield(options, "population")
+		population = options.population;
+	else
+		if prev_flag == 0 || isempty(population)
+			population = LB + (UB - LB) .* rand(vector_cnt, dimension_cnt);
+		elseif prev_flag == 2
+			for i = 1 : vector_cnt
+				fitness(i) = obj_func(fitness_func, population(i, :), functionID);
+			end
+			[~, ind] = min(fitness);
+			best_vector = population(ind, :);
+			population = LB + (UB - LB) .* rand(vector_cnt, dimension_cnt);
+			population(1, :) = best_vector;
 		end
-		[~, ind] = min(fitness);
-		best_vector = population(ind,:);
-		population = l_limit + (u_limit-l_limit).*rand(no_vector, no_dimension);
-		population(1,:) = best_vector;
 	end
-
+	
 	% Evaluating fitness of the individuals
-	for i = 1: no_vector
-		fitness(i) = obj_func(fitness_func, population(i,:), functionID);
+	for i = 1: vector_cnt
+		fitness(i) = obj_func(fitness_func, population(i, :), functionID);
 	end
 
 	[best_fitness, ind] = min(fitness);
-	best_vector = population(ind,:);
+	best_vector = population(ind, :);
+	if print_flag == 2
+		dumpCsv(resultPath, functionID, 0, best_fitness, 0);
+	elseif print_flag == 1
+		fprintf("Best fitness at iteration %d is %f, costing %fs by Scheme %d and Function %d. \n", iteration, best_fitness, cost_time, mutation_switch, functionID);
+	end
 
-	for iteration = 1: iter
+	for iteration = 1 : iter
 		mutant = population;
 
 		% Mutation
 		start_time = cputime;
-		if mutation_switch == 6
+		if mutation_switch == 2 || mutation_switch == 3
+			FS = F;
+		elseif mutation_switch == 4
+			FS_1 = 1;
+			FS_2 = 1;
 			FS = F;
 		end
-		for i = 1: no_vector
-	   		permutation = randperm(no_vector);
+		for i = 1: vector_cnt
+	   		permutation = randperm(vector_cnt);
 			switch mutation_switch
 			case 1
-				mutant(i,:) = population(permutation(1),:) + F * ...
-       		         		(population(permutation(2),:) - population(permutation(3),:));
-            			case 2
-            				mutant(i,:) = best_vector + F* ... 
-               				(population(permutation(1),:)-population(permutation(2),:));
-            			case 3
-            				mutant(i,:) = population(i,:) + F1*(best_vector-population(permutation(1),:)) + ... 
-               		 		F2*(population(permutation(2),:)-population(permutation(3),:)); 
-            			case 4
-            				mutant(i,:) = best_vector + ...
-            				F1*(population(permutation(1),:)-population(permutation(2),:))+ ...
-	                			F2*(population(permutation(3),:)-population(permutation(4),:)); 
-            			case 5
-            				mutant(i,:) = population(permutation(1),:) + ... 
-               		 		F1*(population(permutation(2),:)-population(permutation(1),:))+ ... 
-                				F2*(population(permutation(4),:)-population(permutation(5),:)); 
-			case 6
-				mutant(i,:) = population(permutation(1),:) + FS * ...
-				(population(permutation(2),:) - population(permutation(3),:));
+				mutant(i, :) = population(permutation(1), :) + F * ...
+	   			(population(permutation(2), :) - population(permutation(3), :));
+			case 2
+				alpha = 0.8;
+				mutant(i, :) = population(permutation(1), :) + FS * ...
+				(population(permutation(2), :) - population(permutation(3), :));
 				FS = alpha .* FS + F;
-            			otherwise
-            				fprintf('\nError:\tMutation scheme not specefied.');
-            				fprintf('\nError:\tStopping optimization.\n');
-            			end
+			case 3
+				mutant(i, :) = population(permutation(1), :) + FS * ...
+				(population(permutation(2), :) - population(permutation(3), :));
+				FS = 1 ./ (1 + FS);
+			case 4
+				mutant(i, :) = population(permutation(1), :) + FS * ...
+				(population(permutation(2), :) - population(permutation(3), :));
+				if iteration ~= 1
+					tmp = FS_1;
+					FS_1 = FS_2;
+					FS_2 = tmp + FS_2; 
+				end
+				FS = (FS_1 .* FS_2) ./ (FS_1 + FS_2);
+			case 5
+				mutant(i, :) = population(permutation(1), :) + F * ...
+		 		(population(permutation(2), :) - population(permutation(3), :)); 
+				F = exp(-iteration);
+			case 6
+				mutant(i, :) = population(permutation(1), :) + F * ...
+		 		(population(permutation(2), :) - population(permutation(3), :));
+				F = 1 - 1 ./ (1 + exp(-iteration));
+			case 7
+				mutant(i, :) = population(permutation(1), :) + F * ...
+		 		(population(permutation(2), :) - population(permutation(3), :));
+				F = 1 ./ iteration; 
+			case 8
+				mutant(i, :) = population(permutation(1), :) + F * ...
+		 		(population(permutation(2), :) - population(permutation(3), :));
+				F = (1 / 2) .* (1 - (2 / pi) .* atan(iteration));
+			otherwise
+				fprintf("\nError: Mutation scheme is not specefied, stopping optimization. \n");
+			end
 
-               			 % Boundary control
-           			mutant(i,mutant(i,:) < l_limit(i,:)) = l_limit(i,mutant(i,:) < l_limit(i,:));
-	            		mutant(i,mutant(i,:) > u_limit(i,:)) = u_limit(i,mutant(i,:) > u_limit(i,:));
+   			 % Boundary control
+  			mutant(i, mutant(i, :) < LB(i, :)) = LB(i, mutant(i, :) < LB(i, :));
+			mutant(i, mutant(i, :) > UB(i, :)) = UB(i, mutant(i, :) > UB(i, :));
 		end
 
 		% Crossover
-		rand_mat = rand(no_vector, no_dimension);
-		trial = (rand_mat > Cr).*population + (rand_mat <= Cr).*mutant;
+		rand_mat = rand(vector_cnt, dimension_cnt);
+		trial = (rand_mat > Cr) .* population + (rand_mat <= Cr) .* mutant;
 
-		for i = 1: no_vector
-			fitness_trial(i) = obj_func(fitness_func, trial(i,:), functionID);
+		for i = 1 : vector_cnt
+			fitness_trial(i) = obj_func(fitness_func, trial(i, :), functionID);
 		end
 
 		% Selection
 		if sort_flag == 0
-			population(fitness_trial < fitness,:) = trial(fitness_trial < fitness,:);
-			fitness(fitness_trial < fitness) = fitness_trial(fitness_trial < fitness,:);
+			population(fitness_trial < fitness, :) = trial(fitness_trial < fitness, :);
+			fitness(fitness_trial < fitness) = fitness_trial(fitness_trial < fitness, :);
 			[best_fitness, ind] = min(fitness);
-			best_vector = population(ind,:);
+			best_vector = population(ind, :);
 		else
 			fitness_merged = [fitness; fitness_trial];
 			population_merged = [population; trial];
 			[~, fitness_index] = sort(fitness_merged);
-			population = population_merged(fitness_index(1: no_vector),:);
-			fitness = fitness_merged(fitness_index(1: no_vector));
-		    	best_vector = population(1,:);
-		    	best_fitness = fitness(1);
+			population = population_merged(fitness_index(1: vector_cnt), :);
+			fitness = fitness_merged(fitness_index(1: vector_cnt));
+			best_vector = population(1, :);
+			best_fitness = fitness(1);
 		end
 
 		end_time = cputime;
@@ -145,7 +173,7 @@ function ret_val = differentialEvolution(options)
 		if print_flag == 2
 			dumpCsv(resultPath, functionID, iteration, best_fitness, cost_time);
 		elseif print_flag == 1
-			fprintf('Best fitness at iteration %d is %f, costing %fs by Function %d. \n', iteration, best_fitness, cost_time, functionID);
+			fprintf("Best fitness at iteration %d is %f, costing %fs by Scheme %d and Function %d. \n", iteration, best_fitness, cost_time, mutation_switch, functionID);
 		end
 
 		if eval_max > 0 && eval_exceed == 1
@@ -189,7 +217,7 @@ function initCsv(resultPath)
 	%	delete(resultPath);
 	%end
 	fp = fopen(resultPath, "wt");
-		fprintf(fp, "functionID,iteration,best_fitness,cost_time\n");
+	fprintf(fp, "functionID,iteration,best_fitness,cost_time\n");
 	fclose(fp);
 end
 
