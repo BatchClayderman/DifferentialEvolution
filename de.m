@@ -1,20 +1,20 @@
-clear;
-clc;
-close all;
+load("round_info.mat");
 
 % adjust configs
 pauseTime = 1;
 population_fixed = 1; % decide whether to have population fixed
-load("seed.mat");
+load(strcat(roundFolder, "/seed.mat"));
 
 % walk scheme
 for use_scheme = 1 : 8
 	% folder names
-	folderPath = strcat("scheme_", num2str(use_scheme));
-	if isfolder(folderPath)
+	folderPath = strcat(roundFolder, "/scheme_", num2str(use_scheme));
+	if isClear && isfolder(folderPath)
 		rmdir(folderPath, "s");
 	end
-	mkdir(folderPath);
+	if ~isfolder(folderPath)
+		mkdir(folderPath);
+	end
 	
 	% load config
 	configFp = fopen("config.csv", "rt");
@@ -38,7 +38,7 @@ for use_scheme = 1 : 8
 			[functionID, LB, UB, dimension_cnt, vector_cnt, objective_func, global_minimum] = deal(config{:});
 			valid_cnt = valid_cnt + 1;
 		catch errorInfo
-			fprintf("[%d|%d] Line: %d -> %s\n", use_scheme, total_cnt, total_cnt, errorInfo.message);
+			fprintf("[%d|%d|%d] Line: %d -> %s\n", round_cnt, use_scheme, total_cnt, total_cnt, errorInfo.message);
 			pause(pauseTime);
 			continue;
 		end
@@ -107,16 +107,16 @@ for use_scheme = 1 : 8
 		try
 			ret_val = differentialEvolution(options);
 			success_cnt = success_cnt + 1;
-			fprintf("\n[%d|%d] FunctionID = %d, LB = %g, UB = %g, D = %d, V = %d, global_minimum = %g, best_fitness = %g, time = %gs\n", use_scheme, total_cnt, functionID, LB, UB, dimension_cnt, vector_cnt, global_minimum, ret_val.best_fitness, ret_val.time_cost);
+			fprintf("\n[%d|%d|%d] FunctionID = %d, LB = %g, UB = %g, D = %d, V = %d, global_minimum = %g, best_fitness = %g, time = %gs\n", round_cnt, use_scheme, total_cnt, functionID, LB, UB, dimension_cnt, vector_cnt, global_minimum, ret_val.best_fitness, ret_val.time_cost);
 		catch errorInfo
-			fprintf("\n[%d|%d] FunctionID = %d -> %s\n", use_scheme, total_cnt, functionID, errorInfo.message);
+			fprintf("\n[%d|%d|%d] FunctionID = %d -> %s\n", round_cnt, use_scheme, total_cnt, functionID, errorInfo.message);
 		end
 		
 		pause(pauseTime);
 	end
 
 	fclose(configFp);
-	fprintf("\nScheme: %d\nSuccess / Valid / Total = %d / %d / %d\n\n", use_scheme, success_cnt, valid_cnt, total_cnt);
+	fprintf("\nRound: %d\nScheme: %d\nSuccess / Valid / Total = %d / %d / %d\n\n", round_cnt, use_scheme, success_cnt, valid_cnt, total_cnt);
 end
 
 fprintf("\nFinished\n\n\n");

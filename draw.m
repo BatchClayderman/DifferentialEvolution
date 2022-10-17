@@ -1,24 +1,24 @@
-clear;
-clc;
-close all;
+load("round_info.mat");
 
 % initial resutl folder
-resultFolder = "figs";
-if isfolder(resultFolder)
+resultFolder = strcat(roundFolder, "/figs");
+if isClear && isfolder(resultFolder)
 	rmdir(resultFolder, "s");
 end
-mkdir(resultFolder);
+if ~isfolder(resultFolder)
+	mkdir(resultFolder);
+end
 
 % options
-scheme_folder_struct = dir("scheme*");
-function_ID_struct = dir(strcat(scheme_folder_struct(1).name, "/*.csv")); % take the first one as the standard
+scheme_folder_struct = dir(strcat(roundFolder, "/scheme*"));
+function_ID_struct = dir(strcat(roundFolder, "/", scheme_folder_struct(1).name, "/*.csv")); % take the first one as the standard
 max_iteration = 100;
 x = 0 : 1 : max_iteration;
 pauseTime = 0.001;
 colors = ["g-" "c-" "y-" "b-" "m-" "g-." "c-." "y-." "b-." "m-." "g--" "c--" "y--" "b--" "m--"];
 
 % initial result
-resultFp = fopen("result.csv", "wt");
+resultFp = fopen(strcat(roundFolder, "/result.csv"), "wt");
 fprintf(resultFp, "functionID,schemeID,best_fitness,iteration,iteration_time\n");
 
 % walk function_ID
@@ -34,7 +34,7 @@ for i = 1 : length(function_ID_struct)
 	for j = 1 : length(scheme_folder_struct)
 		ms = regexp(scheme_folder_struct(j).name, "(?<=\w+)\d+", "match");
 		scheme_ID = str2num(ms{1});
-		filepath = strcat(scheme_folder_struct(j).name, "/", function_ID_name);
+		filepath = strcat(roundFolder, "/", scheme_folder_struct(j).name, "/", function_ID_name);
 		fp = fopen(filepath, "rt");
 		line = fgetl(fp); % Ignore the first line
 		k = 1;
@@ -69,7 +69,7 @@ for i = 1 : length(function_ID_struct)
 	ylabel("best value");
 	hold off;
 	saveas(gcf, strcat(resultFolder, "/result_", num2str(function_ID), ".jpg"));
-	fprintf("Dumped: functionID = %d\n", function_ID);
+	fprintf("Dumped: round = %d, functionID = %d\n", round_cnt, function_ID);
 	clf;
 	pause(pauseTime);
 end

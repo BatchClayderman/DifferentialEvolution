@@ -1,6 +1,4 @@
-clear;
-clc;
-close all;
+load("round_info.mat");
 
 % rand seed
 prev_flag = 0;
@@ -46,6 +44,6 @@ while ~feof(fp)
 	seed(functionID) = population;
 end
 fclose(fp);
-save seed seed;
+save(strcat(roundFolder, "/seed.mat"), "seed");
 fprintf("\nFinished\n\n");
 
