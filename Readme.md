@@ -14,7 +14,7 @@ The default objective function used is in `config.csv`. Custom scheme can be spe
 
 ## Acknowledgements
 
-This project is referred to [https://github.com/iskunalpal/Differential-Evolution](https://github.com/iskunalpal/Differential-Evolution). 
+This project is optimized from [https://github.com/iskunalpal/Differential-Evolution](https://github.com/iskunalpal/Differential-Evolution). 
 
 The improved version can also be found at [https://github.com/YiYistudy/DifferentialEvolution](https://github.com/YiYistudy/DifferentialEvolution). 
 
