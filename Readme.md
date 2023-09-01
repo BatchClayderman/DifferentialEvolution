@@ -11,4 +11,8 @@ To run the program use:
 The default objective function used is in `config.csv`. Custom scheme can be specified in `de.m` under `options.use_mutation_scheme`. All the objective functions would be tested after a scheme is specified. 
 
 ### Acknowledges
-This project is referred to https://github.com/iskunalpal/Differential-Evolution. 
+This project is referred to [https://github.com/iskunalpal/Differential-Evolution](https://github.com/iskunalpal/Differential-Evolution). 
+
+The improved version can also be found at [https://github.com/YiYistudy/DifferentialEvolution](https://github.com/YiYistudy/DifferentialEvolution). 
+
+Related publication: Lin Y, Yang Y, Zhang Y. Improved differential evolution with dynamic mutation parameters[J]. Soft Computing, 2023: 1-19. 
